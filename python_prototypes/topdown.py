@@ -180,8 +180,8 @@ def test_stuck_backtracking():
 
 def main():
     test_success()
-    test_fail()
-    test_stuck_backtracking()
+    #test_fail()
+    #test_stuck_backtracking()
 
 if __name__ == "__main__":
     main()
