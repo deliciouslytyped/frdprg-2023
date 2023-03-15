@@ -1,0 +1,10 @@
+State(s='q', i=1, rtop=[], ltop=[])
+State(s='q', i=2, rtop=['b'], ltop=['s'])
+State(s='q', i=2, rtop=['T'], ltop=['s', '4'])
+State(s='q', i=2, rtop=['S'], ltop=['s', '4', '2'])
+State(s='q', i=3, rtop=['S', '+'], ltop=['s', '4', '2', 's'])
+State(s='q', i=4, rtop=['S', '+', 'a'], ltop=['s', '4', '2', 's', 's'])
+State(s='q', i=4, rtop=['S', '+', 'T'], ltop=['s', '4', '2', 's', 's', '3'])
+State(s='q', i=4, rtop=['S'], ltop=['s', '4', '2', 's', 's', '3', '1'])
+State(s='t', i=4, rtop=['S'], ltop=['s', '4', '2', 's', 's', '3', '1'])
+True

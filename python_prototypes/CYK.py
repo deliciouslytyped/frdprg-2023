@@ -1,3 +1,5 @@
+# Terms: lhs - left hand side, rhs - right hand side
+
 from textwrap import dedent
 from itertools import product
 from collections import defaultdict
@@ -5,10 +7,10 @@ from typing import *
 
 
 # MyPy type aliases
-Index = Mapping[str, Set[str]]
-Table = List[List[Set[str]]]
-Grammar = Mapping[str, List[str]]
-DiagonalRow = List[Set[str]]
+Index = Mapping[str, Set[str]]  # reverse the grammar; pair of rhs nonterminals as a string -> set of possible lhs
+Table = List[List[Set[str]]]  # The CYK "pyramid"
+Grammar = Mapping[str, List[str]]  # lhs -> rhs
+DiagonalRow = List[Set[str]]  # Used in the online mode, it's just an alias
 
 
 class CYK:
@@ -30,6 +32,7 @@ class CYK:
                 index[alt].add(k)
         return index
 
+    # returns the set of lhs belonging to each element in a list of rhs, e.g. used like lhs_set_of(["AB", "CD"], index) -> {"E"}
     @staticmethod
     def lhs_set_of(alts: Iterable[str], index: Index) -> Set[str]:
         return set.union(*(index[alt] if alt in index else set() for alt in alts), set())
@@ -45,25 +48,35 @@ class CYK:
     @classmethod
     def online_cyk(cls, index: Index, inp: Iterable[str]) -> Iterator[DiagonalRow]:
         table: Table = []  # The rows will be what are the \ shaped diagonals in the table of the offline parsing method
+        # For each character in the input, we fill the diagonal belonging to it, starting wit the base case, and then
+        # filling the rest of the diagonal, element by element. (Each element is a set of lhs).
+        #
+        # The index of the "diagonal" ("as a row") is the current length of the table
         for s in inp:
             assert s in index
 
             # we don't subtract one because the table is one short (the diagonal we are about to append)
             diag_idx = len(table)
-            diagonal: DiagonalRow = [cls.lhs_set_of(s, index)]  # fill the base case
+            diagonal: DiagonalRow = [cls.lhs_set_of(s, index)]  # fill the base case of this diagonal
             for i in range(1, diag_idx+1):  # count from 1, because the base case is already filled
                 diagonal.append(s := set())
                 for offset in range(i):
-                    # left diagonal, right diagonal, in opposite offset directions
+                    # left diagonal index, right diagonal index, (in the "visible" orientation) in opposite offset directions
                     left = table[diag_idx - i + offset][offset]  # TODO yeah, this one is kind of complicated to explain
                     right = diagonal[i - 1 - offset]  # for the right side, we only need to index into the diagonal
+
+                    # construct the cartesian product of currently viewed "child" entries, and collect their lhs set
                     alts = set(a + b for a, b in product(left, right))
                     s.update(cls.lhs_set_of(alts, index))
+
+            # we've calculated the diagonal / next column of the online traversal.
             table.append(diagonal)
             yield diagonal
 
     # CYK with offline order traversal
     # This means the table is built row by row
+    #
+    # Everything is basically the same as the online mode except the indexing.
     @classmethod
     def offline_cyk(cls, index: Index, inp: str) -> Table:
         for c in inp:
@@ -87,6 +100,7 @@ class CYK:
 
         return table
 
+    # Pretty-print the offline mode table
     @staticmethod
     def print_table(table: Table, inp: str) -> None:
         to_print = [["[%s]" % ", ".join(cell) for cell in row] for row in reversed(table)]
@@ -100,6 +114,7 @@ class CYK:
         print()
 
 
+# Uses the test data from the homework
 class TestCYK:
     grammar = dedent("""
         S
@@ -136,6 +151,7 @@ class TestCYK:
         for i in range(size):
             online_table.append([diagonals[j][i] for j in range(size) if i <= j])
 
+        # Consistency test: the table of the online traversal should be the same as the offline traversal.
         assert offline_table == online_table
         # TODO assert some known good parses
 
